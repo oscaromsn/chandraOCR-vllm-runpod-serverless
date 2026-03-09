@@ -176,7 +176,7 @@
               "value": "fp8"
             }
           ],
-          "default": "fp8",
+          "default": "auto",
           "advanced": true
         }
       },

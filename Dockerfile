@@ -56,7 +56,6 @@ ENV MAX_MODEL_LEN=4096 \
     GPU_MEMORY_UTILIZATION=0.95 \
     TRUST_REMOTE_CODE=true \
     DTYPE=half \
-    KV_CACHE_DTYPE=fp8 \
     MAX_NUM_SEQS=16 \
     ENABLE_PREFIX_CACHING=true \
     PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
