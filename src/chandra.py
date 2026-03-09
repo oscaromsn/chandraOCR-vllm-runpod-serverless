@@ -115,7 +115,7 @@ async def process_chandra_request(job_input: dict, openai_engine) -> AsyncGenera
     log.info(f"Processing {len(images)} page(s)")
 
     ocr_prompt = _build_ocr_prompt(job_input)
-    max_tokens = job_input.get("max_tokens", 4096)
+    max_tokens = job_input.get("max_tokens")  # None = let vLLM auto-calculate
     temperature = job_input.get("temperature", 0)
     served_model_name = openai_engine.served_model_name
 
@@ -131,10 +131,11 @@ async def process_chandra_request(job_input: dict, openai_engine) -> AsyncGenera
                     {"type": "text", "text": ocr_prompt},
                 ]
             }],
-            "max_tokens": max_tokens,
             "temperature": temperature,
             "stream": False,
         }
+        if max_tokens is not None:
+            openai_input["max_tokens"] = max_tokens
         tasks.append(_generate_single_page(openai_engine, openai_input))
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
