@@ -12,3 +12,5 @@ transformers>=4.57.0
 bitsandbytes>=0.45.0
 kernels
 torch-c-dlpack-ext
+chandra-ocr
+pdf2image

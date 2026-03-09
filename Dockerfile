@@ -1,7 +1,7 @@
 FROM nvidia/cuda:12.9.1-base-ubuntu22.04 
 
 RUN apt-get update -y \
-    && apt-get install -y python3-pip
+    && apt-get install -y python3-pip poppler-utils
 
 RUN ldconfig /usr/local/cuda-12.9/compat/
 
@@ -50,6 +50,18 @@ RUN if [ "${VLLM_NIGHTLY}" = "true" ]; then \
     apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* && \
     pip install git+https://github.com/huggingface/transformers.git; \
 fi
+
+# ChandraOCR / RTX 4090 optimal defaults (users can override via env vars)
+ENV MAX_MODEL_LEN=4096 \
+    GPU_MEMORY_UTILIZATION=0.92 \
+    TRUST_REMOTE_CODE=true \
+    DTYPE=half \
+    MAX_NUM_SEQS=16 \
+    ENABLE_PREFIX_CACHING=true \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+    LIMIT_MM_PER_PROMPT="image=1" \
+    MAX_CONCURRENCY=16 \
+    DEFAULT_BATCH_SIZE=10
 
 COPY src /src
 RUN --mount=type=secret,id=HF_TOKEN,required=false \
