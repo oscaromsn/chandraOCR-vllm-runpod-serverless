@@ -12,6 +12,13 @@ openai_engine = None
 
 async def handler(job):
     try:
+        from chandra import detect_chandra_input
+        if detect_chandra_input(job["input"]):
+            from chandra import process_chandra_request
+            async for batch in process_chandra_request(job["input"], openai_engine):
+                yield batch
+            return
+
         from utils import JobInput
         job_input = JobInput(job["input"])
         engine = openai_engine if job_input.openai_route else vllm_engine
