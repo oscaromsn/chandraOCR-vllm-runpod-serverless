@@ -14,6 +14,14 @@ variable "HUGGINGFACE_ACCESS_TOKEN" {
   default = ""
 }
 
+variable "MODEL_NAME" {
+  default = "datalab-to/chandra"
+}
+
+variable "BASE_PATH" {
+  default = "/models"
+}
+
 group "default" {
   targets = ["worker-vllm"]
 }
@@ -23,4 +31,9 @@ target "worker-vllm" {
   context = "."
   dockerfile = "Dockerfile"
   platforms = ["linux/amd64"]
+  args = {
+    MODEL_NAME = MODEL_NAME
+    BASE_PATH  = BASE_PATH
+  }
+  secret = ["id=HF_TOKEN,env=HF_TOKEN"]
 }

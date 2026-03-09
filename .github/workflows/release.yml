@@ -66,6 +66,8 @@ jobs:
 
       - name: Build and push the images to Docker Hub
         uses: docker/bake-action@v2
+        env:
+          HF_TOKEN: ${{ secrets.HUGGINGFACE_ACCESS_TOKEN }}
         with:
           push: true
           set: |
