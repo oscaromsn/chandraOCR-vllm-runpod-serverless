@@ -1,0 +1,136 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://docs.runpod.io/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Endpoint settings
+
+> Reference guide for all Serverless endpoint settings and parameters.
+
+export const InferenceTooltip = () => {
+  return <Tooltip headline="AI inference" tip="The execution phase where a trained model makes predictions on new data. When you prompt a model and it responds, that's inference.">inference</Tooltip>;
+};
+
+export const MachinesTooltip = () => {
+  return <Tooltip headline="Machine" tip="The physical server hardware within a data center that hosts your compute resources.">machines</Tooltip>;
+};
+
+This guide details the configuration options available for Runpod Serverless endpoints. These settings control how your endpoint scales, how it utilizes hardware, and how it manages request lifecycles.
+
+<Note>
+  Some settings can only be updated after deploying your endpoint. For instructions on modifying an existing endpoint, see [Edit an endpoint](/serverless/endpoints/overview#edit-an-endpoint).
+</Note>
+
+## General configuration
+
+### Endpoint name
+
+The name assigned to your endpoint helps you identify it within the Runpod console. This is a local display name and does not impact the endpoint ID used for API requests.
+
+### Endpoint type
+
+Select the architecture that best fits your application's traffic pattern:
+
+**Queue based endpoints** utilize a built-in queueing system to manage requests. They are ideal for asynchronous tasks, batch processing, and long-running jobs where immediate synchronous responses are not required. These endpoints provide guaranteed execution and automatic retries for failed requests. Queue based endpoints are implemented using [handler functions](/serverless/workers/handler-functions).
+
+**Load balancing endpoints** route traffic directly to available workers, bypassing the internal queue. They are designed for high-throughput, low-latency applications that require synchronous request/response cycles, such as real-time <InferenceTooltip /> or custom REST APIs. For implementation details, see [Load balancing endpoints](/serverless/load-balancing/overview).
+
+### GPU configuration
+
+This setting determines the hardware tier your workers will utilize. You can select multiple GPU categories to create a prioritized list. Runpod attempts to allocate the first category in your list. If that hardware is unavailable, it automatically falls back to the subsequent options. Selecting multiple GPU types significantly improves endpoint availability during periods of high demand.
+
+| **GPU type(s)**         | **Memory** | **Flex cost per second** | **Active cost per second** | **Description**                                       |
+| ----------------------- | ---------- | ------------------------ | -------------------------- | ----------------------------------------------------- |
+| A4000, A4500, RTX 4000  | 16 GB      | \$0.00016                | \$0.00011                  | The most cost-effective for small models.             |
+| 4090 PRO                | 24 GB      | \$0.00031                | \$0.00021                  | Extreme throughput for small-to-medium models.        |
+| L4, A5000, 3090         | 24 GB      | \$0.00019                | \$0.00013                  | Great for small-to-medium sized inference workloads.  |
+| L40, L40S, 6000 Ada PRO | 48 GB      | \$0.00053                | \$0.00037                  | Extreme inference throughput on LLMs like Llama 3 7B. |
+| A6000, A40              | 48 GB      | \$0.00034                | \$0.00024                  | A cost-effective option for running big models.       |
+| H100 PRO                | 80 GB      | \$0.00116                | \$0.00093                  | Extreme throughput for big models.                    |
+| A100                    | 80 GB      | \$0.00076                | \$0.00060                  | High throughput GPU, yet still very cost-effective.   |
+| H200 PRO                | 141 GB     | \$0.00155                | \$0.00124                  | Extreme throughput for huge models.                   |
+| B200                    | 180 GB     | \$0.00240                | \$0.00190                  | Maximum throughput for huge models.                   |
+
+## Worker scaling
+
+### Active workers
+
+This setting defines the minimum number of workers that remain warm and ready to process requests at all times. Setting this to 1 or higher eliminates cold starts for the initial wave of requests. Active workers incur charges even when idle, but they receive a 20-30% discount compared to on-demand workers.
+
+### Max workers
+
+This setting controls the maximum number of concurrent instances your endpoint can scale to. This acts as a safety limit for costs and a cap on concurrency. We recommend setting your max worker count approximately 20% higher than your expected maximum concurrency. This buffer allows for smoother scaling during traffic spikes.
+
+### GPUs per worker
+
+This defines how many GPUs are assigned to a single worker instance. The default is 1. When choosing between multiple lower-tier GPUs or fewer high-end GPUs, you should generally prioritize high-end GPUs with lower GPU count per worker when possible.
+
+### Auto-scaling type
+
+This setting determines the logic used to scale workers up and down.
+
+**Queue delay** scaling adds workers based on wait times. If requests sit in the queue for longer than a defined threshold (default 4 seconds), the system provisions new workers. This is best for workloads where slight delays are acceptable in exchange for higher utilization.
+
+**Request count** scaling is more aggressive. It adjusts worker numbers based on the total volume of pending and active work. The formula used is `Math.ceil((requestsInQueue + requestsInProgress) / scalerValue)`. Use a scaler value of 1 for maximum responsiveness, or increase it to scale more conservatively. This strategy is recommended for LLM workloads or applications with frequent, short requests.
+
+## Lifecycle and timeouts
+
+### Idle timeout
+
+The idle timeout determines how long a worker remains active after completing a request before shutting down. While a worker is idle, you are billed for the time, but the worker remains "warm," allowing it to process subsequent requests immediately. The default is 5 seconds.
+
+### Execution timeout
+
+The execution timeout specifies the maximum duration a single job is allowed to run while actively being processed by a worker. When exceeded, the job is marked as failed and the worker is stopped. We strongly recommend keeping this enabled to prevent runaway jobs from consuming infinite resources. The default is 600 seconds (10 minutes). The minimum is 5 seconds and maximum is 7 days.
+
+You can configure the execution timeout in the **Advanced** section of your endpoint settings. You can also override this setting on a per-request basis using the `executionTimeout` field in the [job policy](/serverless/endpoints/send-requests#execution-policies).
+
+### Job TTL (time-to-live)
+
+The TTL defines the total lifespan of a job in the system. Once the TTL expires, the job's data is deleted from the system regardless of its current state—whether it is queued, actively running, or completed. The default is 24 hours. The minimum is 10 seconds and maximum is 7 days.
+
+The TTL timer starts when the job is submitted, not when execution begins. This means if a job sits in the queue waiting for an available worker, that time counts against the TTL. For example, if you set a TTL of 1 hour and the job waits in queue for 45 minutes, only 15 minutes remain for actual execution.
+
+<Warning>
+  TTL is a hard limit on the job's existence. If the TTL expires while a job is actively running on a worker, the job is immediately removed from the system and subsequent status checks return a 404. This applies even if the job would have completed successfully given more time. Always set TTL to comfortably cover both expected queue time and execution time.
+</Warning>
+
+You can override this on a per-request basis using the `ttl` field in the [job policy](/serverless/endpoints/send-requests#execution-policies).
+
+### Result retention
+
+After a job completes, the system retains the results for a limited time. This retention period is separate from the Job TTL and cannot be extended:
+
+| Request type             | Result retention | Notes                                                                   |
+| ------------------------ | ---------------- | ----------------------------------------------------------------------- |
+| Asynchronous (`/run`)    | 30 minutes       | Retrieve results via `/status/{job_id}`                                 |
+| Synchronous (`/runsync`) | 1 minute         | Results returned in the response; also available via `/status/{job_id}` |
+
+Once the retention period expires, the job data is permanently deleted.
+
+## Performance features
+
+### FlashBoot
+
+FlashBoot reduces cold start times by retaining the state of worker resources shortly after they spin down. This allows the system to "revive" a worker much faster than a standard fresh boot. FlashBoot is most effective on endpoints with consistent traffic, where workers frequently cycle between active and idle states.
+
+### Model
+
+The Model field allows you to select from a list of [cached models](/serverless/endpoints/model-caching). When selected, Runpod schedules your workers on host <MachinesTooltip /> that already have these large model files pre-loaded. This significantly reduces the time required to load models during worker initialization.
+
+## Advanced settings
+
+### Data centers
+
+You can restrict your endpoint to specific geographical regions. For maximum reliability and availability, we recommend allowing all data centers. Restricting this list decreases the pool of available GPUs your endpoint can draw from.
+
+### Network volumes
+
+[Network volumes](/storage/network-volumes) provide persistent storage that survives worker restarts. While they enable data sharing between workers, they introduce network latency and restrict your endpoint to the specific data center where the volume resides. Use network volumes only if your workload specifically requires shared persistence or datasets larger than the container limit.
+
+### CUDA version selection
+
+This filter ensures your workers are scheduled on host <MachinesTooltip /> with compatible drivers. While you should select the version your code requires, we recommend also selecting all newer versions. CUDA is generally backward compatible, and selecting a wider range of versions increases the pool of available hardware.
+
+### Expose HTTP/TCP ports
+
+Enabling this option exposes the public IP and port of the worker, allowing for direct external communication. This is required for applications that need persistent connections, such as WebSockets.
