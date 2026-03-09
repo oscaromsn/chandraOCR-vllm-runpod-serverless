@@ -147,6 +147,8 @@ def _get_args_from_env_auto_discover() -> dict:
             logging.warning(
                 "Skip env %s=%r: %s", env_key, value, e
             )
+    if args:
+        logging.info(f"Auto-discovered engine args from env: {args}")
     return args
 
 
