@@ -21,6 +21,33 @@ from engine_args import get_engine_args
 from tokenizer import TokenizerWrapper
 from utils import BatchSize, DummyRequest, JobInput, create_error_response
 
+
+def _patch_qwen3vl_text_config():
+    """Monkey-patch Qwen3VLTextConfig to ensure tie_word_embeddings is always set.
+
+    vLLM's qwen3_vl.py accesses config.tie_word_embeddings on the text_config object,
+    but some Qwen3-VL model configs only define it at the root level. This wraps __init__
+    to default the attribute to False if missing, preventing AttributeError at runtime.
+    See: https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct/discussions/22
+    """
+    try:
+        from transformers import Qwen3VLTextConfig
+    except ImportError:
+        return  # transformers version doesn't have Qwen3VLTextConfig yet
+
+    _original_init = Qwen3VLTextConfig.__init__
+
+    def _patched_init(self, *args, **kwargs):
+        _original_init(self, *args, **kwargs)
+        if not hasattr(self, "tie_word_embeddings"):
+            self.tie_word_embeddings = kwargs.get("tie_word_embeddings", False)
+
+    Qwen3VLTextConfig.__init__ = _patched_init
+
+
+_patch_qwen3vl_text_config()
+
+
 class vLLMEngine:
     def __init__(self, engine = None):
         load_dotenv() # For local development

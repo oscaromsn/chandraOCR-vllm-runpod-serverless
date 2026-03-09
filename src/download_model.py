@@ -10,6 +10,32 @@ BASE_DIR = "/"
 TOKENIZER_PATTERNS = [["*.json", "tokenizer*"]]
 MODEL_PATTERNS = [["*.safetensors"], ["*.bin"], ["*.pt"]]
 
+
+def patch_model_config(model_path):
+    """Patch config.json for Qwen3-VL models missing tie_word_embeddings in text_config.
+
+    vLLM accesses config.tie_word_embeddings on the text_config sub-object, but some
+    Qwen3-VL configs only define it at root level. This copies the value into text_config
+    so vLLM can find it. No-ops if the attribute already exists or if there's no text_config.
+    See: https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct/discussions/22
+    """
+    config_path = os.path.join(model_path, "config.json")
+    if not os.path.isfile(config_path):
+        return
+
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
+    text_config = config.get("text_config")
+    if not isinstance(text_config, dict):
+        return
+
+    if "tie_word_embeddings" in config and "tie_word_embeddings" not in text_config:
+        text_config["tie_word_embeddings"] = config["tie_word_embeddings"]
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=2)
+        logging.info("Patched text_config.tie_word_embeddings = %s in config.json", config["tie_word_embeddings"])
+
 def setup_env():
     if os.getenv("TESTING_DOWNLOAD") == "1":
         BASE_DIR = "tmp"
@@ -73,7 +99,8 @@ if __name__ == "__main__":
     model_name, model_revision = os.getenv("MODEL_NAME"), os.getenv("MODEL_REVISION") or None
     tokenizer_name, tokenizer_revision = os.getenv("TOKENIZER_NAME") or model_name, os.getenv("TOKENIZER_REVISION") or model_revision
    
-    model_path = download(model_name, model_revision, "model", cache_dir)   
+    model_path = download(model_name, model_revision, "model", cache_dir)
+    patch_model_config(model_path)  # Fix Qwen3-VL config compatibility
   
     metadata = {
         "MODEL_NAME": model_path,
