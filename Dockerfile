@@ -53,15 +53,18 @@ fi
 
 # ChandraOCR / RTX 4090 optimal defaults (users can override via env vars)
 ENV MAX_MODEL_LEN=4096 \
-    GPU_MEMORY_UTILIZATION=0.92 \
+    GPU_MEMORY_UTILIZATION=0.95 \
     TRUST_REMOTE_CODE=true \
     DTYPE=half \
+    KV_CACHE_DTYPE=fp8 \
     MAX_NUM_SEQS=16 \
     ENABLE_PREFIX_CACHING=true \
     PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     LIMIT_MM_PER_PROMPT="image=1" \
     MAX_CONCURRENCY=16 \
-    DEFAULT_BATCH_SIZE=10
+    DEFAULT_BATCH_SIZE=10 \
+    MM_PROCESSOR_KWARGS='{"max_pixels": 802816, "min_pixels": 3136}' \
+    MAX_NUM_BATCHED_TOKENS=8192
 
 COPY src /src
 RUN --mount=type=secret,id=HF_TOKEN,required=false \

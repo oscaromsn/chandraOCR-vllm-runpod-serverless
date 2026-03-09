@@ -176,7 +176,7 @@
               "value": "fp8"
             }
           ],
-          "default": "auto",
+          "default": "fp8",
           "advanced": true
         }
       },
@@ -285,7 +285,7 @@
           "name": "Max Num Batched Tokens",
           "type": "number",
           "description": "Maximum number of batched tokens per iteration.",
-          "default": null,
+          "default": 8192,
           "advanced": true
         }
       },
@@ -590,7 +590,7 @@
           "name": "GPU Memory Utilization",
           "type": "number",
           "description": "Sets GPU VRAM utilization",
-          "default": 0.92,
+          "default": 0.95,
           "advanced": true
         }
       },
