@@ -1,9 +1,8 @@
 {
-  "title": "vLLM",
-  "description": "Deploy OpenAI-Compatible Blazing-Fast LLM Endpoints powered by vLLM",
+  "title": "ChandraOCR",
+  "description": "High-throughput OCR endpoint powered by ChandraOCR (datalab-to/chandra) on vLLM. Accepts PDF/image input, returns structured markdown.",
   "type": "serverless",
   "category": "language",
-  "iconUrl": "https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/vllm-color.png",
   "config": {
     "runsOn": "GPU",
     "containerDiskInGb": 150,
@@ -12,9 +11,9 @@
     "allowedCudaVersions": ["12.9", "12.8"],
     "presets": [
       {
-        "name": "deepseek-ai/deepseek-r1-distill-llama-8b",
+        "name": "datalab-to/chandra",
         "defaults": {
-          "MODEL_NAME": "deepseek-ai/deepseek-r1-distill-llama-8b"
+          "MODEL_NAME": "datalab-to/chandra"
         }
       }
     ],
@@ -73,7 +72,7 @@
           "name": "Trust Remote Code",
           "type": "boolean",
           "description": "Trust remote code from Hugging Face.",
-          "default": false,
+          "default": true,
           "advanced": true
         }
       },
@@ -157,7 +156,7 @@
               "value": "float32"
             }
           ],
-          "default": "auto",
+          "default": "half",
           "advanced": true
         }
       },
@@ -187,7 +186,7 @@
           "name": "Max Model Length",
           "type": "number",
           "description": "Model context length.",
-          "default": null,
+          "default": 4096,
           "advanced": true
         }
       },
@@ -256,7 +255,7 @@
           "name": "Enable Prefix Caching",
           "type": "boolean",
           "description": "Enables automatic prefix caching.",
-          "default": false,
+          "default": true,
           "advanced": true
         }
       },
@@ -296,7 +295,7 @@
           "name": "Max Num Seqs",
           "type": "number",
           "description": "Maximum number of sequences per iteration.",
-          "default": 256,
+          "default": 16,
           "advanced": true
         }
       },
@@ -591,7 +590,7 @@
           "name": "GPU Memory Utilization",
           "type": "number",
           "description": "Sets GPU VRAM utilization",
-          "default": 0.95,
+          "default": 0.92,
           "advanced": true
         }
       },
@@ -641,7 +640,7 @@
           "name": "Default Final Batch Size",
           "type": "number",
           "description": "Default and Maximum batch size for token streaming to reduce HTTP calls",
-          "default": 50,
+          "default": 10,
           "advanced": true
         }
       },
@@ -700,7 +699,7 @@
           "name": "Max Concurrency",
           "type": "number",
           "description": "Max concurrent requests per worker. vLLM has an internal queue, so you don't have to worry about limiting by VRAM, this is for improving scaling/load balancing efficiency",
-          "default": 30,
+          "default": 16,
           "advanced": true
         }
       },
@@ -729,7 +728,7 @@
           "name": "Base Path",
           "type": "string",
           "description": "Storage directory for Huggingface cache and model",
-          "default": "/runpod-volume",
+          "default": "/models",
           "advanced": true
         }
       },
