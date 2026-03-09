@@ -794,6 +794,16 @@
           "default": "",
           "advanced": true
         }
+      },
+      {
+        "key": "LIMIT_MM_PER_PROMPT",
+        "input": {
+          "name": "Multimodal Limit Per Prompt",
+          "type": "string",
+          "description": "Limit multimodal inputs per prompt (e.g. 'image=1' or 'image=1,video=0'). ChandraOCR uses one image per page.",
+          "default": "image=1",
+          "advanced": true
+        }
       }
     ]
   }
